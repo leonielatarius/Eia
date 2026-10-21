@@ -1,0 +1,13 @@
+{
+    "java.project.referencedLibraries": [
+        "lib/**/*.jar",
+        "l:\\UNI\\Semester 3\\Entwicklung interaktiver Anwendungen\\Sourcen\\minim_libraries\\minim_library\\eia_simpleminim_v2.jar",
+        "l:\\UNI\\Semester 3\\Entwicklung interaktiver Anwendungen\\Sourcen\\minim_libraries\\minim_library\\jl1.0.1.jar",
+        "l:\\UNI\\Semester 3\\Entwicklung interaktiver Anwendungen\\Sourcen\\minim_libraries\\minim_library\\jsminim.jar",
+        "l:\\UNI\\Semester 3\\Entwicklung interaktiver Anwendungen\\Sourcen\\minim_libraries\\minim_library\\minim.jar",
+        "l:\\UNI\\Semester 3\\Entwicklung interaktiver Anwendungen\\Sourcen\\minim_libraries\\minim_library\\mp3spi1.9.5.jar",
+        "l:\\UNI\\Semester 3\\Entwicklung interaktiver Anwendungen\\Sourcen\\minim_libraries\\minim_library\\tritonus_aos.jar",
+        "l:\\UNI\\Semester 3\\Entwicklung interaktiver Anwendungen\\Sourcen\\minim_libraries\\minim_library\\tritonus_share.jar",
+        "l:\\UNI\\Semester 3\\Entwicklung interaktiver Anwendungen\\Sourcen\\eia_StaticScanner.jar"
+    ]
+}

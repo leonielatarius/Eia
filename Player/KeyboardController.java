@@ -1,7 +1,13 @@
-SimpleMinim minim ; 
-SimpleaudioPlayer audioPlayer; 
+import java.util.Scanner;
 
-minim = new SimpleMinim(); 
-audioPlayer = minim.loadMP3File(filename); 
+public class KeyboardController {
+    private MP3Player mp3Player;
 
-audioPlayer.play(); s
+    public void start() {
+
+    }
+
+    public static void main(String[] args) {
+        new KeyboardController().start();
+    }
+}

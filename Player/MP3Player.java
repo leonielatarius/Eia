@@ -1,22 +1,27 @@
 import java.io.File;
+
 import de.hsrm.mi.eibo.simpleplayer.SimpleAudioPlayer;
 import de.hsrm.mi.eibo.simpleplayer.SimpleMinim;
 
 public class MP3Player {
-    // varibalen
+
+    // untere Grenze fuer die Verstaerkung, entspricht praktisch "stumm"
+    private static final float MIN_GAIN_DB = -80f;
+
     private SimpleMinim minim;
     private SimpleAudioPlayer audioPlayer;
     private float currentVolume = 1f;
 
-    // konstruktor
     public MP3Player() {
-        this.minim = new SimpleMinim();
+        // true = asynchrones Abspielen, damit die Konsole weiter reagiert
+        minim = new SimpleMinim(true);
     }
 
     public void play(String fileName) {
-        this.audioPlayer = minim.loadMP3File(fileName);
+        // SimpleMinim liefert bei fehlender Datei keinen null-Wert, daher vorher
+        // pruefen
         if (!new File(fileName).isFile()) {
-            System.out.println("Datei nicht gefunden");
+            System.out.println("Datei nicht gefunden: " + fileName);
             return;
         }
         if (audioPlayer != null) {
@@ -29,7 +34,7 @@ public class MP3Player {
 
     public void play() {
         if (audioPlayer == null) {
-            System.out.println("Kein Song geladen");
+            System.out.println("Kein Song geladen. Bitte zuerst: play <Datei>");
             return;
         }
         audioPlayer.play();
@@ -39,7 +44,6 @@ public class MP3Player {
         if (audioPlayer != null) {
             audioPlayer.pause();
         }
-
     }
 
     /**
@@ -49,11 +53,21 @@ public class MP3Player {
      */
     public void volume(float value) {
         if (value < 0f || value > 1f) {
-            System.out.println("Lautstärke muss zwischen 0 und 1 liegen ");
+            System.out.println("Lautstaerke muss zwischen 0 und 1 liegen.");
             return;
         }
-        currentVolume = value == 0f ? MIN_GAIN_DB : (float) (20 * Math.log10(value));
-
+        currentVolume = value;
+        if (audioPlayer == null) {
+            return;
+        }
+        float gain = value == 0f ? MIN_GAIN_DB : (float) (20 * Math.log10(value));
+        audioPlayer.setGain(Math.max(gain, MIN_GAIN_DB));
     }
 
+    public void stop() {
+        if (audioPlayer != null) {
+            audioPlayer.pause();
+        }
+        minim.stop();
+    }
 }

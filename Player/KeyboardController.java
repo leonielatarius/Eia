@@ -1,4 +1,5 @@
 import java.io.File;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
 
@@ -6,6 +7,7 @@ public class KeyboardController {
 
     private static final String DEFAULT_PLAYLIST = "default.m3u";
     private static final String DEFAULT_MUSIC_DIR = "music";
+    private static final String ONEDRIVE_MUSIC_DIR = "Music" + File.separator + "Eia";
 
     private static final String PLAY = "play";
     private static final String PAUSE = "pause";
@@ -108,25 +110,51 @@ public class KeyboardController {
     }
 
     /**
-     * Laedt default.m3u, falls vorhanden, sonst alle MP3s aus dem Ordner music.
-     * Gesucht wird im aktuellen Verzeichnis und in Player/, da VS Code das
-     * Programm meist im Workspace-Ordner startet.
+     * Laedt die Standard-Playlist in dieser Reihenfolge:
+     * 1. default.m3u (im aktuellen Verzeichnis oder in Player/)
+     * 2. alle MP3s aus OneDrive\Music\Eia (wird zwischen den Geraeten
+     *    synchronisiert, da die Songs nicht im Git-Repo liegen)
+     * 3. alle MP3s aus dem Ordner music (im aktuellen Verzeichnis oder in Player/)
+     * Gesucht wird auch in Player/, da VS Code das Programm meist im
+     * Workspace-Ordner startet.
      */
     private void loadDefaultPlaylist() {
-        for (String baseDir : new String[] { ".", "Player" }) {
+        String[] baseDirs = { ".", "Player" };
+        for (String baseDir : baseDirs) {
             File m3u = new File(baseDir, DEFAULT_PLAYLIST);
-            File musicDir = new File(baseDir, DEFAULT_MUSIC_DIR);
             if (m3u.isFile()) {
                 setPlaylist(playlistManager.getPlaylist(m3u.getPath()));
                 return;
             }
+        }
+
+        List<File> musicDirs = new ArrayList<>();
+        musicDirs.add(getOneDriveMusicDir());
+        for (String baseDir : baseDirs) {
+            musicDirs.add(new File(baseDir, DEFAULT_MUSIC_DIR));
+        }
+        for (File musicDir : musicDirs) {
             if (musicDir.isDirectory()) {
-                setPlaylist(playlistManager.getAllTracks(musicDir.getPath()));
-                return;
+                Playlist playlist = playlistManager.getAllTracks(musicDir.getPath());
+                // leere Ordner ueberspringen und im naechsten weitersuchen
+                if (!playlist.isEmpty()) {
+                    setPlaylist(playlist);
+                    System.out.println("Songs aus: " + musicDir.getAbsolutePath());
+                    return;
+                }
             }
         }
-        System.out.println("Keine Standard-Playlist gefunden (" + DEFAULT_PLAYLIST
-                + " oder Ordner " + DEFAULT_MUSIC_DIR + ").");
+        System.out.println("Keine Songs gefunden. Lege MP3s in " + getOneDriveMusicDir()
+                + " oder in den Ordner " + DEFAULT_MUSIC_DIR + ".");
+    }
+
+    /** OneDrive\Music\Eia; Windows setzt die Umgebungsvariable OneDrive auf den OneDrive-Ordner. */
+    private File getOneDriveMusicDir() {
+        String oneDrive = System.getenv("OneDrive");
+        if (oneDrive == null) {
+            oneDrive = new File(System.getProperty("user.home"), "OneDrive").getPath();
+        }
+        return new File(oneDrive, ONEDRIVE_MUSIC_DIR);
     }
 
     private void setPlaylist(Playlist playlist) {

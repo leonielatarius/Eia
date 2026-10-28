@@ -5,7 +5,6 @@ This file documents the project step by step. New explanations are added at the 
 ## Contents
 
 1. [Entry 1 – Übung 2: Player / Businesslogik (2026-10-28)](#entry-1--übung-2-player--businesslogik-2026-10-28)
-2. [Entry 2 – Songs on every device via OneDrive (2026-10-28)](#entry-2--songs-on-every-device-via-onedrive-2026-10-28)
 
 ---
 
@@ -194,46 +193,5 @@ You type "play 12"
 - **Why `SimpleMinim(true)`?** Without it, `play()` would block until the song ends, and the console would freeze.
 - **Why gain in dB instead of volume?** `setVolume` isn't supported. Gain is logarithmic, which is why the formula uses `20·log10`.
 - **What's missing?** Automatically playing the next song at the end of a track, and saving or deleting playlists, which are the greyed-out methods on the sheet.
-
----
-
-## Entry 2 – Songs on every device via OneDrive (2026-10-28)
-
-### Problem
-The songs are not in the git repo (`Player/.gitignore` excludes `music/` and `*.mp3`). Reasons: 259 MB makes cloning and pushing slow, git keeps deleted files in its history forever, and the songs are copyrighted. So after `git clone` on another PC, the player had no songs.
-
-### Solution
-The songs now live in **`OneDrive\Music\Eia`**, outside the repo. OneDrive syncs this folder to every device signed into the same account, and git syncs the code. The player looks in that folder automatically at startup.
-
-### Code change: `loadDefaultPlaylist()` in [KeyboardController.java](Player/KeyboardController.java)
-Search order at startup:
-1. `default.m3u` (in the current folder or in `Player/`). An M3U playlist always wins.
-2. **`OneDrive\Music\Eia`**: all MP3s in this folder (recursive).
-3. `music` (in the current folder or in `Player/`): the old local folder, as a fallback.
-
-The first folder that actually **contains songs** is used. Empty folders are skipped (`if (!playlist.isEmpty())`). At startup the console shows which folder the songs came from, e.g. `Songs aus: C:\Users\leoni\OneDrive\Music\Eia`.
-
-New helper method `getOneDriveMusicDir()`:
-```java
-String oneDrive = System.getenv("OneDrive");
-if (oneDrive == null) {
-    oneDrive = new File(System.getProperty("user.home"), "OneDrive").getPath();
-}
-return new File(oneDrive, ONEDRIVE_MUSIC_DIR);   // "Music\Eia"
-```
-- `System.getenv("OneDrive")` reads an **environment variable**. Windows sets it to the OneDrive folder, e.g. `C:\Users\leoni\OneDrive`. This way the code works on every PC, even if the user name is different there; no path is hard-coded.
-- If the variable doesn't exist, it falls back to `<home folder>\OneDrive` (`user.home` is a Java system property).
-- `File.separator` is `\` on Windows and `/` on Mac/Linux, so the path is built correctly on both.
-
-### On another device
-1. Sign into the same OneDrive account and wait until `OneDrive\Music\Eia` is synced.
-2. `git clone` / `git pull` the project.
-3. Start `KeyboardController`. The songs load automatically.
-
-To add new songs: copy `.mp3` files into `OneDrive\Music\Eia`. They show up on all devices.
-
-### Possible questions
-- **Why not commit the songs to git?** Too big, they stay in the history forever, and copyright issues if the repo is ever shared.
-- **Why `System.getenv` instead of a fixed path?** A fixed path like `C:\Users\leoni\...` would break on any PC with a different user name.
 
 ---

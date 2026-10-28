@@ -5,6 +5,7 @@ This file documents the project step by step. New explanations are added at the 
 ## Contents
 
 1. [Entry 1 – Übung 2: Player / Businesslogik (2026-10-28)](#entry-1--übung-2-player--businesslogik-2026-10-28)
+2. [Entry 2 – The M3U playlist file default.m3u (2026-10-28)](#entry-2--the-m3u-playlist-file-defaultm3u-2026-10-28)
 
 ---
 
@@ -193,5 +194,48 @@ You type "play 12"
 - **Why `SimpleMinim(true)`?** Without it, `play()` would block until the song ends, and the console would freeze.
 - **Why gain in dB instead of volume?** `setVolume` isn't supported. Gain is logarithmic, which is why the formula uses `20·log10`.
 - **What's missing?** Automatically playing the next song at the end of a track, and saving or deleting playlists, which are the greyed-out methods on the sheet.
+
+---
+
+## Entry 2 – The M3U playlist file default.m3u (2026-10-28)
+
+### Why
+The exercise sheet (page 8) says: *"Es soll mindestens eine Playlist automatisch geladen werden, die im Filesystem als M3U-Datei definiert ist."* Before this entry, the player only scanned the `music` folder. Now there is a real M3U file: [Player/default.m3u](Player/default.m3u).
+
+### What the file looks like
+```
+#EXTM3U
+#EXTINF:190,6LACK - Inwood Hill Park [Lyric Video]
+music/6LACK - Inwood Hill Park [Lyric Video].mp3
+#EXTINF:225,A$AP Rocky - Multiply (Official Audio) ft. Juicy J
+music/A$AP Rocky - Multiply (Official Audio) ft. Juicy J.mp3
+...
+```
+- `#EXTM3U`: the first line marks the file as an "extended M3U" playlist.
+- `#EXTINF:<seconds>,<artist - title>`: extra info about the next song: its length in seconds and a display name.
+- The line without `#` is the **path to the MP3**. It is relative to the folder of the `.m3u` file, so `music/...` means `Player/music/...`.
+- The file is saved as UTF-8 so special characters (é, ’, ¥) are stored correctly.
+
+It contains all 34 songs from `Player/music`, in alphabetical order. The lengths were read from the MP3s with mp3agic (`Mp3File.getLengthInSeconds()`).
+
+### How it is used
+- At startup, `loadDefaultPlaylist()` in `KeyboardController` looks for `default.m3u` **first** (in the current folder or in `Player/`). Only if there is none does it scan the `music` folder. The console shows `Playlist "default.m3u" geladen: 34 Tracks`.
+- Loading goes through `PlaylistManager.getPlaylist("…/default.m3u")` (see Entry 1, section 3): lines starting with `#` are skipped, every other line becomes a `Track`. The title and artist shown in the player come from the ID3 tags, not from the `#EXTINF` line.
+- The playlist's name is the file name (`default.m3u`).
+
+### Making your own playlists
+1. Create a new text file next to `default.m3u`, e.g. `Player/chill.m3u`.
+2. Write `#EXTM3U` in the first line, then one `music/<filename>.mp3` per line. The `#EXTINF` lines are optional.
+3. In the player: `load Player/chill.m3u` (or `load chill.m3u` if the program runs inside `Player/`).
+
+The order of the lines is the playing order. To change the default playlist, edit `default.m3u`: reorder, delete or add lines.
+
+### Git
+`default.m3u` is a small text file and **is** committed (only `music/` and `*.mp3` are in `.gitignore`). On another PC the playlist is there, but the MP3s it points to are not. Copy the `Player/music` folder over, and the player loads the same playlist there.
+
+### Possible questions
+- **What is M3U?** A plain text format for playlists: one file path per line, plus optional `#` info lines.
+- **Why relative paths?** So the playlist still works if the project folder is somewhere else, e.g. on another PC.
+- **What happens if a song in the M3U is missing?** `createTrack` prints `Datei nicht gefunden, wird uebersprungen: …` and that song is left out. The rest of the playlist still loads.
 
 ---

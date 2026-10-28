@@ -107,16 +107,26 @@ public class KeyboardController {
         System.exit(0);
     }
 
-    /** Laedt default.m3u, falls vorhanden, sonst alle MP3s aus dem Ordner music. */
+    /**
+     * Laedt default.m3u, falls vorhanden, sonst alle MP3s aus dem Ordner music.
+     * Gesucht wird im aktuellen Verzeichnis und in Player/, da VS Code das
+     * Programm meist im Workspace-Ordner startet.
+     */
     private void loadDefaultPlaylist() {
-        if (new File(DEFAULT_PLAYLIST).isFile()) {
-            setPlaylist(playlistManager.getPlaylist(DEFAULT_PLAYLIST));
-        } else if (new File(DEFAULT_MUSIC_DIR).isDirectory()) {
-            setPlaylist(playlistManager.getAllTracks(DEFAULT_MUSIC_DIR));
-        } else {
-            System.out.println("Keine Standard-Playlist gefunden (" + DEFAULT_PLAYLIST
-                    + " oder Ordner " + DEFAULT_MUSIC_DIR + ").");
+        for (String baseDir : new String[] { ".", "Player" }) {
+            File m3u = new File(baseDir, DEFAULT_PLAYLIST);
+            File musicDir = new File(baseDir, DEFAULT_MUSIC_DIR);
+            if (m3u.isFile()) {
+                setPlaylist(playlistManager.getPlaylist(m3u.getPath()));
+                return;
+            }
+            if (musicDir.isDirectory()) {
+                setPlaylist(playlistManager.getAllTracks(musicDir.getPath()));
+                return;
+            }
         }
+        System.out.println("Keine Standard-Playlist gefunden (" + DEFAULT_PLAYLIST
+                + " oder Ordner " + DEFAULT_MUSIC_DIR + ").");
     }
 
     private void setPlaylist(Playlist playlist) {

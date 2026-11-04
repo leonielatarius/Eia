@@ -1,0 +1,48 @@
+// Gradle-Plugins fuer dieses Projekt auswaehlen
+plugins {
+    // Java-Applikation bauen
+    id 'application'
+    // Plugin fuer JavaFX-Projekte
+    id 'org.openjfx.javafxplugin' version '0.1.0'
+
+    // Unit-Test-Bibliotheken
+    id 'jvm-test-suite'
+}
+
+// Keine feste Toolchain (Template: Java 21): es wird das installierte JDK
+// verwendet, mit dem Gradle laeuft (hier JDK 24). JavaFX 21 laeuft ab Java 17.
+java {
+    sourceCompatibility = JavaVersion.VERSION_21
+    targetCompatibility = JavaVersion.VERSION_21
+}
+
+application {
+    // Paketpfad und Namen Ihrer "main"-Klasse, bitte ggf. anpassen
+    mainClass = "de.hsrm.mi.enia.mp3player.StarterApp"
+}
+
+// Verwendung des FX-Plugins: FX-Version und Module wuenschen
+javafx {
+    version = "21"
+    modules = [ 'javafx.controls', 'javafx.fxml' ]
+}
+
+// Test-Konfiguration (./gradlew test)
+testing {
+    suites { 
+        test { 
+            useJUnitJupiter() 
+        }
+    }
+}
+
+// Zusaetzlich benoetigte Abhaengigkeiten
+dependencies {
+	implementation fileTree('libs') { include '*.jar' }
+}
+
+// Abhaengigkeiten herunterladen von...
+repositories {
+    mavenCentral()
+}
+

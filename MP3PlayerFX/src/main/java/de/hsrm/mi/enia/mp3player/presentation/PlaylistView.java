@@ -15,9 +15,11 @@ import javafx.scene.control.Label;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
 import javafx.scene.input.KeyCode;
+import javafx.scene.input.MouseButton;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
+import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
@@ -25,20 +27,23 @@ import javafx.stage.FileChooser;
 
 /**
  * Haupt-View "Playlist": Liste aller Songs, der aktuelle ist hervorgehoben.
- * Ein Klick auf einen Song spielt ihn ab.
+ * Ein Klick auf einen Song spielt ihn ab. Fehlermeldungen liegen als eigene
+ * Ebene (StackPane) ueber dem Inhalt.
  */
-public class PlaylistView extends BorderPane {
+public class PlaylistView extends StackPane {
 
     private MP3Player player;
     private PlaylistManager playlistManager;
     private Label nameLabel;
     private ListView<Track> listView;
     private ControlPane controlPane;
+    private SnackBar snackBar;
     // was zuletzt angezeigt wurde, damit die Liste nur bei Aenderungen neu gezeichnet wird
     private Playlist shownPlaylist;
     private int shownIndex = -1;
 
-    public PlaylistView(MP3Player player, PlaylistManager playlistManager) {
+    public PlaylistView(MP3Player player, PlaylistManager playlistManager, Runnable showPlayer,
+            Runnable showPlaylist) {
         this.player = player;
         this.playlistManager = playlistManager;
 
@@ -46,6 +51,7 @@ public class PlaylistView extends BorderPane {
         nameLabel.setFont(Font.font(null, FontWeight.BOLD, 18));
         nameLabel.setMinWidth(0);
         Button openButton = new Button("Playlist oeffnen …");
+        openButton.setMinWidth(Button.USE_PREF_SIZE);
         openButton.setOnAction(e -> openPlaylist());
         HBox spacer = new HBox();
         HBox.setHgrow(spacer, Priority.ALWAYS);
@@ -55,20 +61,28 @@ public class PlaylistView extends BorderPane {
 
         listView = new ListView<>();
         listView.setCellFactory(list -> new TrackCell());
-        listView.setOnMouseClicked(e -> playSelected());
         listView.setOnKeyPressed(e -> {
             if (e.getCode() == KeyCode.ENTER) {
-                playSelected();
+                playTrack(listView.getSelectionModel().getSelectedIndex());
             }
         });
 
         controlPane = new ControlPane(player);
         controlPane.setPadding(new Insets(12, 0, 0, 0));
 
-        setTop(header);
-        setCenter(listView);
-        setBottom(controlPane);
-        setPadding(new Insets(16));
+        // Ebene 1: der eigentliche Inhalt
+        BorderPane content = new BorderPane();
+        content.setTop(new VBox(new NavigationBar(false, showPlayer, showPlaylist), header));
+        content.setCenter(listView);
+        content.setBottom(controlPane);
+        content.setPadding(new Insets(8, 16, 16, 16));
+
+        // Ebene 2: Fehlermeldungen
+        snackBar = new SnackBar();
+        StackPane.setAlignment(snackBar, Pos.BOTTOM_CENTER);
+        StackPane.setMargin(snackBar, new Insets(0, 16, 64, 16));
+
+        getChildren().addAll(content, snackBar);
     }
 
     public void update() {
@@ -86,8 +100,11 @@ public class PlaylistView extends BorderPane {
         controlPane.update();
     }
 
-    private void playSelected() {
-        int index = listView.getSelectionModel().getSelectedIndex();
+    public void showMessage(String message) {
+        snackBar.show(message);
+    }
+
+    private void playTrack(int index) {
         if (index >= 0) {
             player.playTrack(index);
         }
@@ -110,6 +127,12 @@ public class PlaylistView extends BorderPane {
             // verhindert horizontales Scrollen bei langen Titeln, sie werden stattdessen gekuerzt
             setPrefWidth(0);
             setContentDisplay(ContentDisplay.GRAPHIC_ONLY);
+            // nur ein Klick auf einen Song spielt ihn ab (nicht auf Scrollbar oder leere Flaeche)
+            setOnMouseClicked(e -> {
+                if (!isEmpty() && e.getButton() == MouseButton.PRIMARY) {
+                    playTrack(getIndex());
+                }
+            });
         }
 
         @Override

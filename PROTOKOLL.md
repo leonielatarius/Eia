@@ -7,6 +7,7 @@ This file documents the project step by step. New explanations are added at the 
 1. [Entry 1 – Übung 2: Player / Businesslogik (2026-10-28)](#entry-1--übung-2-player--businesslogik-2026-10-28)
 2. [Entry 2 – The M3U playlist file default.m3u (2026-10-28)](#entry-2--the-m3u-playlist-file-defaultm3u-2026-10-28)
 3. [Entry 3 – Übung 3 & 4: JavaFX user interface (2026-11-04)](#entry-3--übung-3--4-javafx-user-interface-2026-11-04)
+4. [Entry 4 – Review against the exercise sheets, start problems fixed (2026-11-12)](#entry-4--review-against-the-exercise-sheets-start-problems-fixed-2026-11-12)
 
 ---
 
@@ -382,3 +383,54 @@ The template's placeholder test always failed on purpose ("bitte loeschen"). It 
 - **Why does the progress slider only seek on release?** While dragging, the timeline would otherwise reset the slider to the playing position, and every intermediate value would jump in the song. `update()` skips the slider while it is pressed.
 
 ---
+
+## Entry 4 – Review against the exercise sheets, start problems fixed (2026-11-12)
+
+The whole project was checked against the three exercise sheets (Übung 1, 2, 3 & 4) and tested: build, unit tests, the console player, and the GUI (start, switching views, clicking a song, error message, wide/narrow window, closing the window).
+
+### Why the GUI did not start
+1. **OneDrive locked the `build` folder.** The project is inside OneDrive. OneDrive turns the folders in `MP3PlayerFX/build` into read-only placeholders, so Gradle failed with `Unable to delete directory ...\build\...` and nothing was built or started. This happened again on every rebuild.
+   **Fix:** `build.gradle` now puts the build folder outside OneDrive when the project is in OneDrive: `~/.gradle/project-builds/MP3PlayerFX`. Elsewhere (e.g. on another PC) nothing changes.
+2. **Started from VS Code, no playlist was loaded.** VS Code starts the program in the workspace folder `Eia`, Gradle starts it in `MP3PlayerFX`. `default.m3u` was only searched in `.` and `../Player`, so with VS Code the player started empty ("Kein Song ausgewaehlt").
+   **Fix:** the search list is now `{ ".", "../Player", "Player" }`. In addition, `.vscode/launch.json` has two start configurations: **"MP3PlayerFX (JavaFX-GUI, Uebung 3 & 4)"** (runs in `MP3PlayerFX/`) and **"Konsolen-Player (Uebung 1 & 2)"**.
+
+### How to start now
+- **VS Code:** Run and Debug (Ctrl+Shift+D) → choose "MP3PlayerFX (JavaFX-GUI, Uebung 3 & 4)" → ▶. Or Gradle icon → MP3PlayerFX → Tasks → application → run.
+- **Terminal:** in `MP3PlayerFX`: `.\gradlew run` (tests: `.\gradlew test`).
+
+### What did not match the sheets, and was changed
+| Before | Sheet says | Now |
+|---|---|---|
+| Scene root was an extra `StackPane` wrapping a `BorderPane`; the views were swapped inside it | "Natürlich soll eine dieser Views dann als Root in der Szene angelegt werden" | `PlayerView` / `PlaylistView` are the root themselves. Switching: `scene.setRoot(playerView)` / `scene.setRoot(playlistView)` in `MP3PlayerGUI` |
+| Error layer only in the wrapper | "Zusatzinformationen als Ebenen … über einen StackPane stapeln" | Each main view **extends `StackPane`**: layer 1 is the content (`BorderPane`), layer 2 is its own `SnackBar`. `MP3PlayerGUI.showMessage` shows the message in the view that is currently visible |
+| One shared `NavigationBar` | – | Each view has its own `NavigationBar(playerActive, …)`; the tab of its own view is always marked |
+| A click **anywhere** in the list (also on the scrollbar or empty space) restarted the selected song | "Auswahl eines Songs aus der Playlist" | Only a click on a song row (`TrackCell`) or Enter plays it |
+| If a song file was missing, the old song kept playing while the new title was shown | "Anzeige von Fehlermeldungen" | `playCurrent()` stops the old song, then shows the error |
+| `Player/__MACOSX/`, `.DS_Store` in the repository | – | removed, added to `Player/.gitignore` |
+
+### Checked and correct (no change needed)
+- **Übung 1:** `MP3Player` with `play(fileName)`, `play()`, `pause()`, `volume(0..1)` via `setGain` in dB; `SimpleMinim(true)` for asynchronous playback; `KeyboardController` with constants for the commands (`play Dateiname`, `pause`, `play`, `volume 0.2`, `quit`).
+- **Übung 2:** Variante 2 (`PlaylistManager` loads, `MP3Player` plays); `Track`, `Playlist` with a name; M3U loading with mp3agic; `setPlaylist`, `skip`, `skipBack`, `shuffle`, `repeat`. The console version in `Player/` compiles and loads all 34 tracks from `default.m3u`.
+- **Übung 3 & 4:** all player functions from the sheet (Play/Pause/Stop, Skip/Skip back, Shuffle + Repeat, Volume, title + cover, position/length, playlist, choosing a song, current song highlighted, error messages); components are classes that extend Pane classes (`CoverPane`, `ProgressPane`, `ControlPane`, `VolumePane`, `NavigationBar`); `ImageViewPane` from `eia_ui.jar` for the cover; elastic layout; `ControlPane` reused in both views; no popup windows for messages.
+
+### New structure of the window
+```
+Scene
+ └─ root = PlayerView  (or PlaylistView, switched with scene.setRoot)
+      StackPane
+       ├─ layer 1: BorderPane
+       │     top:    NavigationBar [Player|Playlist]
+       │     center: CoverPane            (PlaylistView: ListView)
+       │     bottom: ProgressPane + ControlPane
+       └─ layer 2: SnackBar (error messages)
+```
+
+### Still your own task
+- **Wireframes and sitemap as drawings** (sheet 3 & 4, page 4): two window sizes per view. The structure above can be your sitemap.
+- **Skinning / Material Design look:** comes in the next exercise (CSS).
+- "Playlist oeffnen …" uses the system file dialog (`FileChooser`). It is not required by the sheet; it is an extra.
+
+### Possible questions
+- **Why is each main view a `StackPane`?** So the view can be the scene root *and* still have layers: the content at the bottom, the error message on top.
+- **Why does each view have its own `SnackBar` and `NavigationBar`?** A JavaFX node can only have one parent. Two instances of the same reusable component is the normal way.
+- **Why is the build folder outside OneDrive?** OneDrive locks files while syncing them, and Gradle has to delete and rewrite the build folder on every build.

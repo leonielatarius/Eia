@@ -16,6 +16,13 @@ java {
     targetCompatibility = JavaVersion.VERSION_21
 }
 
+// Liegt das Projekt in OneDrive, sperrt OneDrive die Dateien im build-Ordner und
+// Gradle kann sie nicht loeschen ("Unable to delete directory ...build"). Dann wird
+// ausserhalb von OneDrive gebaut (im Gradle-Benutzerordner).
+if (projectDir.absolutePath.contains('OneDrive')) {
+    layout.buildDirectory = new File(gradle.gradleUserHomeDir, "project-builds/${project.name}")
+}
+
 application {
     // Paketpfad und Namen Ihrer "main"-Klasse, bitte ggf. anpassen
     mainClass = "de.hsrm.mi.enia.mp3player.StarterApp"

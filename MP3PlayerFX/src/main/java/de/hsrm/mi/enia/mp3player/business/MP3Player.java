@@ -258,6 +258,12 @@ public class MP3Player {
     private void playCurrent() {
         Track track = getCurrentTrack();
         if (!new File(track.getFileName()).isFile()) {
+            // der alte Song darf nicht unter dem neuen Titel weiterlaufen
+            if (audioPlayer != null) {
+                audioPlayer.pause();
+            }
+            trackLoaded = false;
+            playing = false;
             errorHandler.accept("Datei nicht gefunden: " + track.getFileName());
             return;
         }

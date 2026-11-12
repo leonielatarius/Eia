@@ -1,0 +1,21 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "java",
+            "name": "MP3PlayerFX (JavaFX-GUI, Uebung 3 & 4)",
+            "request": "launch",
+            "mainClass": "de.hsrm.mi.enia.mp3player.StarterApp",
+            "projectName": "MP3PlayerFX",
+            "cwd": "${workspaceFolder}/MP3PlayerFX"
+        },
+        {
+            "type": "java",
+            "name": "Konsolen-Player (Uebung 1 & 2)",
+            "request": "launch",
+            "mainClass": "KeyboardController",
+            "cwd": "${workspaceFolder}/Player",
+            "console": "integratedTerminal"
+        }
+    ]
+}

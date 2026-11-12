@@ -9,30 +9,28 @@ import javafx.animation.Animation;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
 import javafx.application.Application;
-import javafx.geometry.Insets;
-import javafx.geometry.Pos;
 import javafx.scene.Scene;
-import javafx.scene.layout.BorderPane;
-import javafx.scene.layout.StackPane;
 import javafx.stage.Stage;
 import javafx.util.Duration;
 
 /**
- * Hauptfenster fuer PlayerGUI. Erzeugt die beiden Haupt-Views (Player, Playlist)
- * und wechselt zwischen ihnen. Fehlermeldungen liegen als eigene Ebene darueber.
+ * JavaFX-Applikation. Erzeugt die Businessklassen und die beiden Haupt-Views
+ * (Player, Playlist), verwaltet sie zentral und wechselt zwischen ihnen,
+ * indem die jeweilige View als Root der Szene gesetzt wird.
  */
 public class MP3PlayerGUI extends Application {
 
-    // hier wird default.m3u gesucht: im Projektordner und im Ordner der Konsolenversion
-    private static final String[] PLAYLIST_DIRS = { ".", "../Player" };
+    // hier wird default.m3u gesucht. Das Arbeitsverzeichnis haengt davon ab, wie
+    // gestartet wird: Gradle startet in MP3PlayerFX/, VS Code im Workspace-Ordner.
+    private static final String[] PLAYLIST_DIRS = { ".", "../Player", "Player" };
 
     private MP3Player player;
     private PlaylistManager playlistManager;
     private PlayerView playerView;
     private PlaylistView playlistView;
-    private SnackBar snackBar;
+    private Scene scene;
     private Timeline updateTimeline;
-    // Meldungen aus init(), bevor es die SnackBar gibt
+    // Meldungen aus init(), bevor es eine View gibt, die sie anzeigen kann
     private List<String> startupMessages = new ArrayList<>();
 
     @Override
@@ -47,26 +45,17 @@ public class MP3PlayerGUI extends Application {
 
     @Override
     public void start(Stage primaryStage) throws Exception {
-        playerView = new PlayerView(player);
-        playlistView = new PlaylistView(player, playlistManager);
+        // die Haupt-Views werden hier zentral erzeugt und verwaltet
+        playerView = new PlayerView(player, this::showPlayerView, this::showPlaylistView);
+        playlistView = new PlaylistView(player, playlistManager, this::showPlayerView, this::showPlaylistView);
 
-        BorderPane mainPane = new BorderPane();
-        NavigationBar navigationBar = new NavigationBar(
-                () -> mainPane.setCenter(playerView),
-                () -> mainPane.setCenter(playlistView));
-        mainPane.setTop(navigationBar);
-        mainPane.setCenter(playerView);
+        // eine der Haupt-Views ist die Root der Szene
+        scene = new Scene(playerView, 420, 640);
 
-        // Ebenen: unten die aktuelle View, oben die Fehlermeldungen
-        snackBar = new SnackBar();
-        StackPane root = new StackPane(mainPane, snackBar);
-        StackPane.setAlignment(snackBar, Pos.BOTTOM_CENTER);
-        StackPane.setMargin(snackBar, new Insets(0, 16, 96, 16));
-
-        playlistManager.setErrorHandler(snackBar::show);
-        player.setErrorHandler(snackBar::show);
+        playlistManager.setErrorHandler(this::showMessage);
+        player.setErrorHandler(this::showMessage);
         if (!startupMessages.isEmpty()) {
-            snackBar.show(String.join("\n", startupMessages));
+            showMessage(String.join("\n", startupMessages));
         }
 
         // Anzeige regelmaessig aktualisieren (Position, Songwechsel) und Songende erkennen
@@ -80,12 +69,28 @@ public class MP3PlayerGUI extends Application {
         playerView.update();
         playlistView.update();
 
-        Scene scene = new Scene(root, 420, 640);
         primaryStage.setTitle("MP3 Player");
         primaryStage.setMinWidth(340);
         primaryStage.setMinHeight(480);
         primaryStage.setScene(scene);
         primaryStage.show();
+    }
+
+    private void showPlayerView() {
+        scene.setRoot(playerView);
+    }
+
+    private void showPlaylistView() {
+        scene.setRoot(playlistView);
+    }
+
+    /** Fehlermeldung in der gerade sichtbaren View als Ebene einblenden. */
+    private void showMessage(String message) {
+        if (scene.getRoot() == playlistView) {
+            playlistView.showMessage(message);
+        } else {
+            playerView.showMessage(message);
+        }
     }
 
     @Override
